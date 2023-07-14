@@ -5,11 +5,15 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface UserRepository extends MongoRepository<User, Long> {
+public interface UserRepository extends MongoRepository<User, String> {
 
     <S extends User> S save(S entity);
 
-    Optional<User> findById(Long id);
+    Optional<User> findById(String id);
+
+    Optional<User> findByUsername(String username);
+
+    Optional<User> findByEmail(String email);
 
     long count();
 
