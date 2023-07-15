@@ -1,4 +1,4 @@
-import { Text, View, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { Text, View, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity, SafeAreaView  } from "react-native";
 import { useRef } from "react";
 import { AuthStore } from "../../store.js";
 import { Stack, useRouter } from "expo-router";
@@ -11,7 +11,7 @@ export default function CreateAccount() {
   const confirmPasswordRef = useRef("");
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <SafeAreaView  style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <Stack.Screen
         options={{ title: "Create Account", headerLeft: () => <></> }}
       />
@@ -76,7 +76,7 @@ export default function CreateAccount() {
       }}>
       <Text>CANCEL</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView >
   );
 }
 
