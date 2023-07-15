@@ -16,40 +16,12 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping("/api/users/register")
-    public ResponseEntity<Response> registerUser(@RequestBody UserRegisterRequest request) {
-
-        return ResponseEntity.ok(
-                Response.builder()
-                        .message("Test register")
-                        .build()
-        );
-    }
-
-    @PostMapping("/api/users/login")
-    public ResponseEntity<Response> loginUser(@RequestBody UserLoginRequest request) {
-        return ResponseEntity.ok(
-                Response.builder()
-                        .message("Test login")
-                        .build()
-        );
-    }
-
-    @GetMapping("/api/users/{id}")
+    @GetMapping("/api/v1/user/{id}")
     public ResponseEntity<Response> getUserById(@PathVariable("id") Long userId) {
         return ResponseEntity.ok(
                 Response.builder()
                         .message("Test get user")
                         .data(of("userId", userId))
-                        .build()
-        );
-    }
-
-    @GetMapping("/api/users/logout")
-    public ResponseEntity<Response> logoutUser() {
-        return ResponseEntity.ok(
-                Response.builder()
-                        .message("Test logout user")
                         .build()
         );
     }
