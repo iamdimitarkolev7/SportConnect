@@ -7,7 +7,7 @@ import Footer from "../common/footer";
 import Header from "../common/header";
 import { ScrollView } from "react-native-gesture-handler";
 
-const AddPost = () => {
+const EditPost = () => {
   const router = useRouter();
   const titleRef = useRef("");
   const categories = ["Footabll", "Volleyball", "Basketball", "Tennis", "Table tennis", "Squash", "Other"];
@@ -103,4 +103,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddPost;
+export default EditPost;
