@@ -1,27 +1,49 @@
 import { View,  TouchableOpacity, Image, StyleSheet } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import icons from "../../constants/icons";
+import { AuthStore } from "../../store";
 
 const Footer = () => {
   const router = useRouter();
-  return (
-    <View style={styles.container}>
-        <TouchableOpacity onPress={() => {router.replace("../home"); }}>
-            <Image
-                source={icons.home}
-                resizeMode='contain'
-                style={styles.icon}
-            />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => {router.replace("../posts/addPost");}}>
-            <Image
-                source={icons.addPost}
-                resizeMode='contain'
-                style={styles.icon}
-            />
-        </TouchableOpacity>
-    </View>
-  )
+  const { isLoggedIn } = AuthStore.useState((s) => s);
+  if(!isLoggedIn){
+    return(
+      <View></View>
+    )
+  } else{
+    return (
+      <View style={styles.container}>
+          <TouchableOpacity onPress={() => {router.replace("../home"); }}>
+              <Image
+                  source={icons.home}
+                  resizeMode='contain'
+                  style={styles.icon}
+              />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {router.replace("../posts/search");}}>
+              <Image
+                  source={icons.search}
+                  resizeMode='contain'
+                  style={styles.icon}
+              />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {router.replace("../posts/addPost");}}>
+              <Image
+                  source={icons.addPost}
+                  resizeMode='contain'
+                  style={styles.icon}
+              />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {router.replace("../user/profile");}}>
+              <Image
+                  source={icons.profile}
+                  resizeMode='contain'
+                  style={styles.icon}
+              />
+          </TouchableOpacity>
+      </View>
+    )
+  }
 }
 
 const styles = StyleSheet.create({
@@ -35,7 +57,7 @@ const styles = StyleSheet.create({
       borderTopColor: 'gray',
       paddingHorizontal: 16,
       position: 'absolute',
-      bottom: 10,
+      bottom: 30,
       left: 0,
       right: 0,
     },
