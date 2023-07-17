@@ -18,5 +18,5 @@ public interface UserService {
     User registerUser(UserRegisterRequest request);
     void verifyUser(String verificationToken, String email);
     User loginUser(UserLoginRequest request);
-    void logoutUser();
+    void logoutUser(String token);
 }

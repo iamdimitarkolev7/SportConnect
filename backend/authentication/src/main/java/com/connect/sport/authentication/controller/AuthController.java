@@ -76,19 +76,56 @@ public class AuthController {
 
     @PostMapping("/api/v1/auth/login")
     public ResponseEntity<Response> loginUser(@RequestBody UserLoginRequest request) {
-        return ResponseEntity.ok(
-                Response.builder()
-                        .message("Test login")
-                        .build()
-        );
+
+        try {
+
+            User loggedInUser = userService.loginUser(request);
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .timeStamp(LocalDateTime.now())
+                            .success(true)
+                            .message("User logged in successfully")
+                            .data(of("loggedInUser", loggedInUser))
+                            .build()
+            );
+        }
+        catch (RuntimeException e) {
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .timeStamp(LocalDateTime.now())
+                            .success(false)
+                            .message(e.getMessage())
+                            .build()
+            );
+        }
     }
 
     @GetMapping("/api/v1/auth/logout")
-    public ResponseEntity<Response> logoutUser() {
-        return ResponseEntity.ok(
-                Response.builder()
-                        .message("Test logout user")
-                        .build()
-        );
+    public ResponseEntity<Response> logoutUser(@RequestHeader("Authorization") String token) {
+
+        try {
+
+            userService.logoutUser(token);
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .timeStamp(LocalDateTime.now())
+                            .success(true)
+                            .message("Logout successful")
+                            .build()
+            );
+        }
+        catch (RuntimeException e) {
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .success(false)
+                            .timeStamp(LocalDateTime.now())
+                            .message(e.getMessage())
+                            .build()
+            );
+        }
     }
 }

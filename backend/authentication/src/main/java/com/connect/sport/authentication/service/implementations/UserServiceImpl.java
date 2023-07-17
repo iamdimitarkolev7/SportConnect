@@ -1,8 +1,11 @@
 package com.connect.sport.authentication.service.implementations;
 
 import com.connect.sport.authentication.enums.UserRole;
+import com.connect.sport.authentication.exception.InvalidCredentialsException;
 import com.connect.sport.authentication.exception.PasswordDoNotMatchException;
 import com.connect.sport.authentication.exception.UserAlreadyExistsException;
+import com.connect.sport.authentication.exception.UserNotFoundException;
+import com.connect.sport.authentication.exception.verification.UserNotVerifiedException;
 import com.connect.sport.authentication.exception.verification.VerificationFailedException;
 import com.connect.sport.authentication.utils.jwt.JwtService;
 import com.connect.sport.authentication.model.User;
@@ -21,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -82,9 +86,18 @@ public class UserServiceImpl implements UserService {
     public User registerUser(UserRegisterRequest request) {
 
         final String username = request.getUsername();
+        Optional<User> o_user = userRepository.findByUsername(username);
 
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new UserAlreadyExistsException("User with username " + username + " already exists!");
+        if (o_user.isPresent()) {
+
+            User existingUser = o_user.get();
+
+            if (existingUser.isEnabled()) {
+                throw new UserAlreadyExistsException("User with username " + username + " already exists!");
+            }
+            else {
+                userRepository.delete(existingUser);
+            }
         }
 
         final String password = request.getPassword();
@@ -146,11 +159,50 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User loginUser(UserLoginRequest request) {
-        return null;
+
+        final String username = request.getUsername();
+        Optional<User> o_user = userRepository.findByUsername(username);
+
+        if (userRepository.findByUsername(username).isEmpty()) {
+            throw new UserNotFoundException("User with username " + username + " does not exist!");
+        }
+
+        User user = o_user.get();
+
+        if (!user.isEnabled()) {
+            throw new UserNotVerifiedException("User is not verified! Check your email!");
+        }
+
+        boolean passwordsMatch = bCryptPasswordEncoder.matches(request.getPassword(), user.getPassword());
+
+        if (!passwordsMatch) {
+            throw new InvalidCredentialsException("Invalid password!");
+        }
+
+        Token userToken = Token.builder()
+                .userID(user.getId())
+                .token(jwtService.generateToken(user))
+                .expired(false)
+                .revoked(false)
+                .build();
+
+        user.setUserTokens(List.of(userToken));
+
+        return userRepository.save(user);
     }
 
     @Override
-    public void logoutUser() {
+    public void logoutUser(String token) {
 
+        String username = jwtService.extractUsername(token.substring(7));
+        Optional<User> o_user = userRepository.findByUsername(username);
+
+        if (o_user.isEmpty()) {
+            throw new UserNotFoundException("User not found!");
+        }
+
+        User user = o_user.get();
+
+        user.setUserTokens(new ArrayList<>());
     }
 }
