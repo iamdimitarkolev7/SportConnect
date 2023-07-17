@@ -1,4 +1,4 @@
-import { Text, View, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { Text, View, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity, SafeAreaView  } from "react-native";
 import { useRef } from "react";
 import { AuthStore } from "../../store.js";
 import { Stack, useRouter } from "expo-router";
@@ -8,7 +8,7 @@ export default function LogIn() {
   const emailRef = useRef("");
   const passwordRef = useRef("");
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <SafeAreaView  style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <Stack.Screen options={{ title: "Login" }} />
       <View>
         <Text style={styles.label}>Email</Text>
@@ -48,7 +48,7 @@ export default function LogIn() {
       }}>
         <Text>Register</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView >
   );
 }
 
