@@ -8,6 +8,8 @@ import com.connect.sport.authentication.model.response.Response;
 import com.connect.sport.authentication.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -127,5 +129,47 @@ public class AuthController {
                             .build()
             );
         }
+    }
+
+    @GetMapping("/register/oauth2/google")
+    public String redirectToGoogleRegister() {
+        // Redirect to the Google OAuth2 register page
+        return "redirect:/oauth2/authorization/google";
+    }
+
+    @GetMapping("/login/oauth2/google")
+    public String redirectToGoogleLogin() {
+        // Redirect to the Google OAuth2 login page
+        return "redirect:/oauth2/authorization/google";
+    }
+
+    @GetMapping("/api/v1/auth/register/oauth2/code/google")
+    public ResponseEntity<Response> handleGoogleOAuth2RegisterCallback(@AuthenticationPrincipal OAuth2User oauth2User) {
+
+        String email = oauth2User.getAttribute("email");
+        String name = oauth2User.getAttribute("name");
+
+        return ResponseEntity.ok(
+                Response.builder()
+                        .timeStamp(LocalDateTime.now())
+                        .message("Registered using google")
+                        .success(true)
+                        .build()
+        );
+    }
+
+    @GetMapping("/api/v1/auth/login/oauth2/code/google")
+    public ResponseEntity<Response> handleGoogleOAuth2LoginCallback(@AuthenticationPrincipal OAuth2User oauth2User) {
+
+        String email = oauth2User.getAttribute("email");
+        String name = oauth2User.getAttribute("name");
+
+        return ResponseEntity.ok(
+                Response.builder()
+                        .timeStamp(LocalDateTime.now())
+                        .message("Logged in using google")
+                        .success(true)
+                        .build()
+        );
     }
 }
