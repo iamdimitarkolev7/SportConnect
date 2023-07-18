@@ -49,8 +49,7 @@ public class SecurityConfig {
                 .logout((logout) ->
                         logout
                                 .logoutSuccessUrl("/api/v1/auth/logout")
-                                .addLogoutHandler(logoutService)
-                                .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext()));
+                                .addLogoutHandler(logoutService));
 
         http.authenticationProvider(authenticationProvider);
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

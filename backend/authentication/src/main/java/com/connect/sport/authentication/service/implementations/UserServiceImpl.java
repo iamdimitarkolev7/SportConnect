@@ -1,10 +1,7 @@
 package com.connect.sport.authentication.service.implementations;
 
 import com.connect.sport.authentication.enums.UserRole;
-import com.connect.sport.authentication.exception.InvalidCredentialsException;
-import com.connect.sport.authentication.exception.PasswordDoNotMatchException;
-import com.connect.sport.authentication.exception.UserAlreadyExistsException;
-import com.connect.sport.authentication.exception.UserNotFoundException;
+import com.connect.sport.authentication.exception.*;
 import com.connect.sport.authentication.exception.verification.UserNotVerifiedException;
 import com.connect.sport.authentication.exception.verification.VerificationFailedException;
 import com.connect.sport.authentication.utils.jwt.JwtService;
@@ -19,6 +16,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -121,15 +122,6 @@ public class UserServiceImpl implements UserService {
                 .password(bCryptPasswordEncoder.encode(request.getPassword()))
                 .build();
 
-        Token userToken = Token.builder()
-                .userID(newUser.getId())
-                .token(jwtService.generateToken(newUser))
-                .expired(false)
-                .revoked(false)
-                .build();
-
-        newUser.addToken(userToken);
-
         User createdUser = userRepository.save(newUser);
 
         emailVerificationService.sendVerificationEmail(createdUser, createdUser.getVerificationCode());
@@ -202,7 +194,6 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = o_user.get();
-
         user.setUserTokens(new ArrayList<>());
     }
 }
