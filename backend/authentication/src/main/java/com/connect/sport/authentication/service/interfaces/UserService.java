@@ -8,7 +8,6 @@ import java.util.Optional;
 
 public interface UserService {
 
-    User createUser(User user);
     User editUser(User user);
     User delete(User user);
     Optional<User> getUserById(Long userId);
@@ -16,7 +15,7 @@ public interface UserService {
     boolean userExists(Long userId);
     boolean userExists(String username);
     User registerUser(UserRegisterRequest request);
-    void verifyUser(String verificationToken, String email);
+    void verifyUser(final String verificationToken, final String email);
     User loginUser(UserLoginRequest request);
-    void logoutUser(String token);
+    void logoutUser(final String token);
 }

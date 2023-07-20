@@ -49,11 +49,6 @@ public class UserServiceImpl implements UserService {
     private final EmailVerificationService emailVerificationService;
 
     @Override
-    public User createUser(User user) {
-        return null;
-    }
-
-    @Override
     public User editUser(User user) {
         return null;
     }
@@ -87,30 +82,93 @@ public class UserServiceImpl implements UserService {
     public User registerUser(UserRegisterRequest request) {
 
         final String username = request.getUsername();
-        Optional<User> o_user = userRepository.findByUsername(username);
+        final Optional<User> o_user = userRepository.findByUsername(username);
 
         if (o_user.isPresent()) {
-
             User existingUser = o_user.get();
-
-            if (existingUser.isEnabled()) {
-                throw new UserAlreadyExistsException("User with username " + username + " already exists!");
-            }
-            else {
-                userRepository.delete(existingUser);
-            }
+            validateUser(existingUser);
         }
+
+        final String email = request.getEmail();
+        validateEmail(email);
 
         final String password = request.getPassword();
         final String confirmPassword = request.getConfirmPassword();
+        validatePassword(password, confirmPassword);
 
-        if (!password.equals(confirmPassword)) {
-            throw new PasswordDoNotMatchException("Passwords do not match!");
+        final String verificationToken = emailVerificationService.generateVerificationToken();
+        User newUser = buildNewUser(request, verificationToken);
+        User createdUser = userRepository.save(newUser);
+        emailVerificationService.sendVerificationEmail(createdUser, createdUser.getVerificationCode());
+
+        return createdUser;
+    }
+
+    @Override
+    public void verifyUser(final String verificationToken, final String email) {
+
+        Optional<User> o_user = userRepository.findByEmail(email);
+        if (o_user.isEmpty()) {
+            throw new VerificationFailedException("Verification failed");
         }
 
-        String verificationToken = emailVerificationService.generateVerificationToken();
+        User user = o_user.get();
+        checkVerificationCode(user, verificationToken);
+    }
 
-        User newUser = User.builder()
+    @Override
+    public User loginUser(UserLoginRequest request) {
+
+        final String email = request.getEmail();
+        final String username = request.getUsername();
+        validateUsernameOrEmailInput(email, username);
+
+        final Optional<User> o_user = !(email == null || email.isEmpty()) ?
+                userRepository.findByEmail(email) :
+                userRepository.findByUsername(username);
+
+        if (o_user.isEmpty()) {
+            throw new UserNotFoundException("User not found!");
+        }
+
+        User user = o_user.get();
+        checkVerification(user);
+
+        checkLoginPasswordMatch(request.getPassword(), user.getPassword());
+
+        Token userToken = generateUserToken(user);
+        user.setUserTokens(List.of(userToken));
+
+        return userRepository.save(user);
+    }
+
+    @Override
+    public void logoutUser(final String token) {
+
+        final String username = jwtService.extractUsername(token.substring(7));
+        Optional<User> o_user = userRepository.findByUsername(username);
+
+        if (o_user.isEmpty()) {
+            throw new UserNotFoundException("User not found!");
+        }
+
+        User user = o_user.get();
+        user.setUserTokens(new ArrayList<>());
+    }
+
+    private void validateUser(User user) {
+
+        if (user.isEnabled()) {
+            throw new UserAlreadyExistsException("User with username " + user.getUsername() + " already exists!");
+        }
+        else {
+            userRepository.delete(user);
+        }
+    }
+
+    private User buildNewUser(UserRegisterRequest request, final String verificationToken) {
+
+        return User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
@@ -121,26 +179,25 @@ public class UserServiceImpl implements UserService {
                 .verificationCode(verificationToken)
                 .password(bCryptPasswordEncoder.encode(request.getPassword()))
                 .build();
-
-        User createdUser = userRepository.save(newUser);
-
-        emailVerificationService.sendVerificationEmail(createdUser, createdUser.getVerificationCode());
-
-        return createdUser;
     }
 
-    @Override
-    public void verifyUser(String verificationToken, String email) {
+    private void validatePassword(final String password, final String confirmPassword) {
 
-        Optional<User> o_user = userRepository.findByEmail(email);
-
-        if (o_user.isEmpty()) {
-            throw new VerificationFailedException("Verification failed");
+        if (!password.equals(confirmPassword)) {
+            throw new PasswordDoNotMatchException("Passwords do not match!");
         }
+    }
 
-        User user = o_user.get();
+    private void validateEmail(final String email) {
 
-        if (user.getVerificationCode().equals(verificationToken)) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new EmailAlreadyUsedException("This email is already used!");
+        }
+    }
+
+    private void checkVerificationCode(User user, final String verificationCode) {
+
+        if (user.getVerificationCode().equals(verificationCode)) {
             user.setEnabled(true);
             userRepository.save(user);
         }
@@ -149,51 +206,34 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Override
-    public User loginUser(UserLoginRequest request) {
-
-        final String username = request.getUsername();
-        Optional<User> o_user = userRepository.findByUsername(username);
-
-        if (userRepository.findByUsername(username).isEmpty()) {
-            throw new UserNotFoundException("User with username " + username + " does not exist!");
-        }
-
-        User user = o_user.get();
+    private void checkVerification(User user) {
 
         if (!user.isEnabled()) {
             throw new UserNotVerifiedException("User is not verified! Check your email!");
         }
+    }
 
-        boolean passwordsMatch = bCryptPasswordEncoder.matches(request.getPassword(), user.getPassword());
+    private void checkLoginPasswordMatch(final String requestPassword, final String userPassword) {
 
-        if (!passwordsMatch) {
-            throw new InvalidCredentialsException("Invalid password!");
+        if (!bCryptPasswordEncoder.matches(requestPassword, userPassword)) {
+            throw new PasswordDoNotMatchException("Wrong password!");
         }
+    }
 
-        Token userToken = Token.builder()
+    private void validateUsernameOrEmailInput(final String email, final String username) {
+
+        if ((email == null || email.isEmpty()) && (username == null || username.isEmpty())) {
+            throw new InvalidCredentialsException("Invalid username/email!");
+        }
+    }
+
+    private Token generateUserToken(User user) {
+
+        return Token.builder()
                 .userID(user.getId())
                 .token(jwtService.generateToken(user))
                 .expired(false)
                 .revoked(false)
                 .build();
-
-        user.setUserTokens(List.of(userToken));
-
-        return userRepository.save(user);
-    }
-
-    @Override
-    public void logoutUser(String token) {
-
-        String username = jwtService.extractUsername(token.substring(7));
-        Optional<User> o_user = userRepository.findByUsername(username);
-
-        if (o_user.isEmpty()) {
-            throw new UserNotFoundException("User not found!");
-        }
-
-        User user = o_user.get();
-        user.setUserTokens(new ArrayList<>());
     }
 }

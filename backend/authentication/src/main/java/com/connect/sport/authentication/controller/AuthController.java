@@ -131,13 +131,13 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/register/oauth2/google")
+    @GetMapping("/api/v1/auth/register/oauth2/google")
     public String redirectToGoogleRegister() {
         // Redirect to the Google OAuth2 register page
         return "redirect:/oauth2/authorization/google";
     }
 
-    @GetMapping("/login/oauth2/google")
+    @GetMapping("/api/v1/auth/login/oauth2/google")
     public String redirectToGoogleLogin() {
         // Redirect to the Google OAuth2 login page
         return "redirect:/oauth2/authorization/google";
