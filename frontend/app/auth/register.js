@@ -2,6 +2,7 @@ import { Text, View, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity,
 import { useRef } from "react";
 import { AuthStore } from "../../store.js";
 import { Stack, useRouter } from "expo-router";
+import userRequests from "../../hook/userFetch.js";
 
 export default function CreateAccount() {
   const router = useRouter();
@@ -9,6 +10,32 @@ export default function CreateAccount() {
   const usernameRef = useRef("");
   const passwordRef = useRef("");
   const confirmPasswordRef = useRef("");
+  const firstNameRef = useRef("");
+  const lastNameRef=useRef("");
+
+  async function handleRegistration() {
+    const data = {
+      "username":usernameRef.current,
+      "email":emailRef.current,
+      "password":passwordRef.current,
+      "confirmPassword":confirmPasswordRef.current,
+      "firstName":firstNameRef.current,
+      "lastName":lastNameRef.current
+    };
+    try {
+      const response = await userRequests.registerRequest(data);
+  
+      if(data.success){
+        console.log("Регистрацията е успешна!", response);
+        router.replace("/auth/login");
+      }else{
+        console.log("Ivalid! ", response);
+      }
+      
+    } catch (error) {
+      console.error("Грешка при регистрацията:", error);
+    }
+  }
 
   return (
     <SafeAreaView  style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -61,11 +88,34 @@ export default function CreateAccount() {
           style={styles.textInput}
         />
       </View>
+      <View>
+        <Text style={styles.label}>First Name</Text>
+        <TextInput
+          placeholder="first name"
+          secureTextEntry={true}
+          nativeID="firstName"
+          onChangeText={(text) => {
+            firstNameRef.current = text;
+          }}
+          style={styles.textInput}
+        />
+      </View>
+      <View>
+        <Text style={styles.label}>Last Name</Text>
+        <TextInput
+          placeholder="last name"
+          secureTextEntry={true}
+          nativeID="lastName"
+          onChangeText={(text) => {
+            lastNameRef.current = text;
+          }}
+          style={styles.textInput}
+        />
+      </View>
 
       <TouchableOpacity
       onPress={() => {
-        //todo... register user
-        router.replace('/home');
+        handleRegistration();
       }}>
       <Text>Register</Text>
       </TouchableOpacity>
