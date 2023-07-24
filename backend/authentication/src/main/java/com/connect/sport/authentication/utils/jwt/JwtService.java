@@ -46,6 +46,20 @@ public class JwtService {
         return generateToken(new HashMap<>(), userDetails);
     }
 
+    public String generateNewToken(String username, String userId) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("userId", userId);
+
+        return Jwts
+                .builder()
+                .setClaims(extraClaims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public String generateToken(Map<String, Object> extraClaims, User userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
@@ -53,7 +67,6 @@ public class JwtService {
     public String generateRefreshToken(User userDetails) {
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
     }
-
 
     private String buildToken(
             Map<String, Object> extraClaims,
@@ -77,7 +90,7 @@ public class JwtService {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 

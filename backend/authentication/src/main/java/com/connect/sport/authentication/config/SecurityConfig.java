@@ -34,6 +34,7 @@ public class SecurityConfig {
                     auth
                             .requestMatchers("/api/v1/auth/**").permitAll()
                             .requestMatchers("/api/v1/logout").permitAll()
+                            .requestMatchers("/api/v1/token/**").permitAll()
                             .requestMatchers("/api/v1/user/**").hasAnyRole(USER.name(), USER.name())
 
                             .requestMatchers(GET, "/api/v1/admin/**").hasAnyAuthority(ADMIN_READ.name(), USER_READ.name())
