@@ -1,5 +1,6 @@
 package com.connect.sport.authentication.config;
 
+import com.connect.sport.authentication.model.Token;
 import com.connect.sport.authentication.utils.jwt.JwtService;
 import com.connect.sport.authentication.repository.TokenRepository;
 import jakarta.servlet.FilterChain;
@@ -20,7 +21,7 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -53,9 +54,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-
             boolean isTokenValid = tokenRepository.findByToken(jwt)
-                    .map(t -> !t.isExpired() && !t.isRevoked())
+                    .map(Token::isActive)
                     .orElse(false);
 
             if (jwtService.isTokenValid(jwt, userDetails) && isTokenValid) {

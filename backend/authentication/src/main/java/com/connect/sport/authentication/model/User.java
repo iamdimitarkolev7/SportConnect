@@ -1,7 +1,6 @@
 package com.connect.sport.authentication.model;
 
 import com.connect.sport.authentication.enums.UserRole;
-import com.connect.sport.authentication.model.token.Token;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.*;
@@ -23,15 +22,12 @@ public class User implements UserDetails {
 
     @Id
     private String id;
-
     private String firstName;
     private String lastName;
     private String email;
     private String username;
     private String password;
     private String verificationCode;
-
-    private List<Token> userTokens;
 
     private boolean enabled;
 
@@ -61,11 +57,5 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.enabled;
-    }
-
-    public void addToken(Token token) {
-        if (this.userTokens != null) {
-            this.userTokens.add(token);
-        }
     }
 }

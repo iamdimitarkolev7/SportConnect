@@ -1,9 +1,12 @@
 package com.connect.sport.authentication.service.interfaces;
 
+import com.connect.sport.authentication.model.Token;
 import com.connect.sport.authentication.model.User;
-import com.connect.sport.authentication.model.request.UserLoginRequest;
-import com.connect.sport.authentication.model.request.UserRegisterRequest;
+import com.connect.sport.authentication.payload.request.UserLoginRequest;
+import com.connect.sport.authentication.payload.request.UserRegisterRequest;
+import reactor.util.function.Tuple2;
 
+import java.net.UnknownHostException;
 import java.util.Optional;
 
 public interface UserService {
@@ -16,6 +19,6 @@ public interface UserService {
     boolean userExists(String username);
     User registerUser(UserRegisterRequest request);
     void verifyUser(final String verificationToken, final String email);
-    User loginUser(UserLoginRequest request);
+    Token loginUser(UserLoginRequest request) throws UnknownHostException;
     void logoutUser(final String token);
 }

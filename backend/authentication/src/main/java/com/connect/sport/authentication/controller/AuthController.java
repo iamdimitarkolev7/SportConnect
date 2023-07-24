@@ -1,17 +1,17 @@
 package com.connect.sport.authentication.controller;
 
 import com.connect.sport.authentication.exception.verification.VerificationFailedException;
+import com.connect.sport.authentication.model.Token;
 import com.connect.sport.authentication.model.User;
-import com.connect.sport.authentication.model.request.UserLoginRequest;
-import com.connect.sport.authentication.model.request.UserRegisterRequest;
-import com.connect.sport.authentication.model.response.Response;
+import com.connect.sport.authentication.payload.request.UserLoginRequest;
+import com.connect.sport.authentication.payload.request.UserRegisterRequest;
+import com.connect.sport.authentication.payload.response.Response;
 import com.connect.sport.authentication.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 
 import static java.util.Map.of;
@@ -33,7 +33,7 @@ public class AuthController {
                             .success(true)
                             .timeStamp(LocalDateTime.now())
                             .data(of("registeredUser", user))
-                            .message("Registration is successful")
+                            .message("Check your email to finish registration!")
                             .build()
             );
         }
@@ -60,7 +60,7 @@ public class AuthController {
                     Response.builder()
                             .success(true)
                             .timeStamp(LocalDateTime.now())
-                            .message("User successfully verified")
+                            .message("User successfully verified!")
                             .build()
             );
         }
@@ -81,18 +81,18 @@ public class AuthController {
 
         try {
 
-            User loggedInUser = userService.loginUser(request);
+            Token jwt = userService.loginUser(request);
 
             return ResponseEntity.ok(
                     Response.builder()
                             .timeStamp(LocalDateTime.now())
                             .success(true)
-                            .message("User logged in successfully")
-                            .data(of("loggedInUser", loggedInUser))
+                            .message("User logged in successfully!")
+                            .data(of("jwt", jwt))
                             .build()
             );
         }
-        catch (RuntimeException e) {
+        catch (RuntimeException | UnknownHostException e) {
 
             return ResponseEntity.ok(
                     Response.builder()
@@ -104,11 +104,12 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/api/v1/auth/logout")
+    @GetMapping("/api/v1/logout")
     public ResponseEntity<Response> logoutUser(@RequestHeader("Authorization") String token) {
 
         try {
 
+            System.out.println(token);
             userService.logoutUser(token);
 
             return ResponseEntity.ok(
@@ -129,47 +130,5 @@ public class AuthController {
                             .build()
             );
         }
-    }
-
-    @GetMapping("/api/v1/auth/register/oauth2/google")
-    public String redirectToGoogleRegister() {
-        // Redirect to the Google OAuth2 register page
-        return "redirect:/oauth2/authorization/google";
-    }
-
-    @GetMapping("/api/v1/auth/login/oauth2/google")
-    public String redirectToGoogleLogin() {
-        // Redirect to the Google OAuth2 login page
-        return "redirect:/oauth2/authorization/google";
-    }
-
-    @GetMapping("/api/v1/auth/register/oauth2/code/google")
-    public ResponseEntity<Response> handleGoogleOAuth2RegisterCallback(@AuthenticationPrincipal OAuth2User oauth2User) {
-
-        String email = oauth2User.getAttribute("email");
-        String name = oauth2User.getAttribute("name");
-
-        return ResponseEntity.ok(
-                Response.builder()
-                        .timeStamp(LocalDateTime.now())
-                        .message("Registered using google")
-                        .success(true)
-                        .build()
-        );
-    }
-
-    @GetMapping("/api/v1/auth/login/oauth2/code/google")
-    public ResponseEntity<Response> handleGoogleOAuth2LoginCallback(@AuthenticationPrincipal OAuth2User oauth2User) {
-
-        String email = oauth2User.getAttribute("email");
-        String name = oauth2User.getAttribute("name");
-
-        return ResponseEntity.ok(
-                Response.builder()
-                        .timeStamp(LocalDateTime.now())
-                        .message("Logged in using google")
-                        .success(true)
-                        .build()
-        );
     }
 }

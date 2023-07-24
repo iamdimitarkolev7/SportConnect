@@ -1,8 +1,6 @@
 package com.connect.sport.authentication.controller;
 
-import com.connect.sport.authentication.model.request.UserLoginRequest;
-import com.connect.sport.authentication.model.request.UserRegisterRequest;
-import com.connect.sport.authentication.model.response.Response;
+import com.connect.sport.authentication.payload.response.Response;
 import com.connect.sport.authentication.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

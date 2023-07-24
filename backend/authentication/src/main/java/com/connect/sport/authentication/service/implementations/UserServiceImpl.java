@@ -2,13 +2,15 @@ package com.connect.sport.authentication.service.implementations;
 
 import com.connect.sport.authentication.enums.UserRole;
 import com.connect.sport.authentication.exception.*;
+import com.connect.sport.authentication.exception.jwt.InvalidTokenException;
 import com.connect.sport.authentication.exception.verification.UserNotVerifiedException;
 import com.connect.sport.authentication.exception.verification.VerificationFailedException;
+import com.connect.sport.authentication.repository.TokenRepository;
 import com.connect.sport.authentication.utils.jwt.JwtService;
 import com.connect.sport.authentication.model.User;
-import com.connect.sport.authentication.model.request.UserLoginRequest;
-import com.connect.sport.authentication.model.request.UserRegisterRequest;
-import com.connect.sport.authentication.model.token.Token;
+import com.connect.sport.authentication.payload.request.UserLoginRequest;
+import com.connect.sport.authentication.payload.request.UserRegisterRequest;
+import com.connect.sport.authentication.model.Token;
 import com.connect.sport.authentication.repository.UserRepository;
 import com.connect.sport.authentication.service.interfaces.UserService;
 import com.connect.sport.authentication.utils.verification.email.EmailVerificationService;
@@ -18,13 +20,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +40,7 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final TokenRepository tokenRepository;
 
     @Autowired
     private final JwtService jwtService;
@@ -83,7 +89,6 @@ public class UserServiceImpl implements UserService {
 
         final String username = request.getUsername();
         final Optional<User> o_user = userRepository.findByUsername(username);
-
         if (o_user.isPresent()) {
             User existingUser = o_user.get();
             validateUser(existingUser);
@@ -117,7 +122,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User loginUser(UserLoginRequest request) {
+    public Token loginUser(UserLoginRequest request) throws UnknownHostException {
 
         final String email = request.getEmail();
         final String username = request.getUsername();
@@ -137,23 +142,31 @@ public class UserServiceImpl implements UserService {
         checkLoginPasswordMatch(request.getPassword(), user.getPassword());
 
         Token userToken = generateUserToken(user);
-        user.setUserTokens(List.of(userToken));
+        userRepository.save(user);
 
-        return userRepository.save(user);
+        //createSecurityContext(user);
+
+        return tokenRepository.save(userToken);
     }
 
     @Override
     public void logoutUser(final String token) {
 
-        final String username = jwtService.extractUsername(token.substring(7));
-        Optional<User> o_user = userRepository.findByUsername(username);
+        final String jwt = token.substring(7);
+        final String userId = jwtService.extractUserId(jwt);
 
-        if (o_user.isEmpty()) {
-            throw new UserNotFoundException("User not found!");
+        Optional<Token> o_currentToken = tokenRepository.findByToken(jwt);
+
+        if (o_currentToken.isEmpty() || userId.isEmpty()) {
+            throw new InvalidTokenException("The provided bearer token is invalid!");
         }
 
-        User user = o_user.get();
-        user.setUserTokens(new ArrayList<>());
+        Token currentToken = o_currentToken.get();
+        currentToken.setActive(false);
+        currentToken.setLastActivity(LocalDateTime.now());
+        tokenRepository.save(currentToken);
+
+        clearContext();
     }
 
     private void validateUser(User user) {
@@ -175,7 +188,6 @@ public class UserServiceImpl implements UserService {
                 .username(request.getUsername())
                 .role(UserRole.USER)
                 .enabled(false)
-                .userTokens(new ArrayList<>())
                 .verificationCode(verificationToken)
                 .password(bCryptPasswordEncoder.encode(request.getPassword()))
                 .build();
@@ -199,6 +211,7 @@ public class UserServiceImpl implements UserService {
 
         if (user.getVerificationCode().equals(verificationCode)) {
             user.setEnabled(true);
+            user.setVerificationCode(null);
             userRepository.save(user);
         }
         else {
@@ -227,13 +240,52 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private Token generateUserToken(User user) {
+    private Token generateUserToken(User user) throws UnknownHostException {
 
         return Token.builder()
-                .userID(user.getId())
+                .userId(user.getId())
                 .token(jwtService.generateToken(user))
-                .expired(false)
-                .revoked(false)
+                .tokenExpiry(LocalDateTime.now().plus(jwtService.getJwtExpiration(), ChronoUnit.MILLIS))
+                .refreshToken(jwtService.generateRefreshToken(user))
+                .refreshTokenExpiry(LocalDateTime.now().plus(jwtService.getRefreshExpiration(), ChronoUnit.MILLIS))
+                .ipAddress(Inet6Address.getLocalHost().getHostAddress())
+                .userAgent("SHOULD ADD THIS")
+                .createdAt(LocalDateTime.now())
+                .lastActivity(LocalDateTime.now())
+                .active(true)
                 .build();
+    }
+
+    private void createSecurityContext(User user) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                user, user.getPassword(), user.getAuthorities()
+        );
+
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private boolean userAuthenticated() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.isAuthenticated();
+    }
+
+    private void clearContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private List<Token> retainLastThreeTokens(List<Token> userTokens) {
+
+        List<Token> sortedTokens = userTokens.stream()
+                .sorted(Comparator.comparing(Token::getTokenExpiry))
+                .toList();
+
+        List<Token> lastThreeTokens = sortedTokens.stream()
+                .skip(Math.max(0, sortedTokens.size() - 3))
+                .toList();
+
+        userTokens.retainAll(lastThreeTokens);
+
+        return userTokens;
     }
 }

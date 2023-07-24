@@ -1,4 +1,4 @@
-package com.connect.sport.authentication.model.response;
+package com.connect.sport.authentication.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
