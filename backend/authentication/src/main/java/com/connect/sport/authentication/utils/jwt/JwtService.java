@@ -1,5 +1,6 @@
 package com.connect.sport.authentication.utils.jwt;
 
+import com.connect.sport.authentication.exception.jwt.InvalidTokenException;
 import com.connect.sport.authentication.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -118,5 +119,20 @@ public class JwtService {
 
     public long getRefreshExpiration() {
         return refreshExpiration;
+    }
+
+    public boolean authHeaderValid(String authorizationHeader) {
+
+        String jwt = extractToken(authorizationHeader);
+        return isTokenExpired(jwt);
+    }
+
+    public String extractToken(String authorizationHeader) {
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring("Bearer ".length());
+        }
+
+        return null;
     }
 }

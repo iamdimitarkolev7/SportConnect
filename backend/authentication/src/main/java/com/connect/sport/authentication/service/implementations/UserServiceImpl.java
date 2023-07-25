@@ -18,9 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +26,6 @@ import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -65,13 +60,20 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Optional<User> getUserById(Long userId) {
-        return Optional.empty();
+    public User getUserById(String userId) {
+
+        Optional<User> o_user = userRepository.findById(userId);
+
+        if (o_user.isEmpty()) {
+            throw new UserNotFoundException("There is no user with such id!");
+        }
+
+        return o_user.get();
     }
 
     @Override
-    public Optional<User> getUserByUsername(String username) {
-        return Optional.empty();
+    public User getUserByUsername(String username) {
+        return null;
     }
 
     @Override
@@ -144,8 +146,6 @@ public class UserServiceImpl implements UserService {
         Token userToken = generateUserToken(user);
         userRepository.save(user);
 
-        //createSecurityContext(user);
-
         return tokenRepository.save(userToken);
     }
 
@@ -165,8 +165,6 @@ public class UserServiceImpl implements UserService {
         currentToken.setActive(false);
         currentToken.setLastActivity(LocalDateTime.now());
         tokenRepository.save(currentToken);
-
-        clearContext();
     }
 
     private void validateUser(User user) {
@@ -256,36 +254,4 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    private void createSecurityContext(User user) {
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                user, user.getPassword(), user.getAuthorities()
-        );
-
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
-
-    private boolean userAuthenticated() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null && authentication.isAuthenticated();
-    }
-
-    private void clearContext() {
-        SecurityContextHolder.clearContext();
-    }
-
-    private List<Token> retainLastThreeTokens(List<Token> userTokens) {
-
-        List<Token> sortedTokens = userTokens.stream()
-                .sorted(Comparator.comparing(Token::getTokenExpiry))
-                .toList();
-
-        List<Token> lastThreeTokens = sortedTokens.stream()
-                .skip(Math.max(0, sortedTokens.size() - 3))
-                .toList();
-
-        userTokens.retainAll(lastThreeTokens);
-
-        return userTokens;
-    }
 }

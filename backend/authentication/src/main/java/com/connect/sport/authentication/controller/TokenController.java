@@ -3,7 +3,9 @@ package com.connect.sport.authentication.controller;
 import com.connect.sport.authentication.model.Token;
 import com.connect.sport.authentication.payload.response.Response;
 import com.connect.sport.authentication.service.interfaces.TokenService;
+import com.connect.sport.authentication.utils.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -19,12 +21,15 @@ public class TokenController {
 
     private final TokenService tokenService;
 
+    @Autowired
+    private final JwtService jwtService;
+
     @PostMapping("/api/v1/token/refresh-token")
     private ResponseEntity<Response> refreshJwtToken(@RequestHeader("Authorization") String authorizationHeader) {
 
         try {
 
-            String refreshToken = extractRefreshToken(authorizationHeader);
+            String refreshToken = jwtService.extractToken(authorizationHeader);
             Token token = tokenService.generateNewToken(refreshToken);
 
             return ResponseEntity.ok(
@@ -34,8 +39,7 @@ public class TokenController {
                             .timeStamp(LocalDateTime.now())
                             .build()
             );
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
 
             return ResponseEntity.badRequest().body(
                     Response.builder()
@@ -44,14 +48,5 @@ public class TokenController {
                             .build()
             );
         }
-    }
-
-    private String extractRefreshToken(String authorizationHeader) {
-
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            return authorizationHeader.substring("Bearer ".length());
-        }
-
-        return null;
     }
 }

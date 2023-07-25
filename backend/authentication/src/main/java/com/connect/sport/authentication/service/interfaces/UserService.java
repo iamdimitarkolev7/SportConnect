@@ -13,8 +13,8 @@ public interface UserService {
 
     User editUser(User user);
     User delete(User user);
-    Optional<User> getUserById(Long userId);
-    Optional<User> getUserByUsername(String username);
+    User getUserById(String userId);
+    User getUserByUsername(String username);
     boolean userExists(Long userId);
     boolean userExists(String username);
     User registerUser(UserRegisterRequest request);
