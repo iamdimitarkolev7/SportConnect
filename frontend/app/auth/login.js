@@ -2,21 +2,51 @@ import { Text, View, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity,
 import { useRef } from "react";
 import { AuthStore } from "../../store.js";
 import { Stack, useRouter } from "expo-router";
+import userRequests from "../../hook/userFetch.js";
 
 export default function LogIn() {
   const router = useRouter();
-  const emailRef = useRef("");
+  const inputRef = useRef("");
   const passwordRef = useRef("");
+
+  async function handleLogin() {
+    const data={"password":passwordRef.current};
+    if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(inputRef.current))
+    {
+      data.email=inputRef.current;
+    }else{
+      data.username=inputRef.current;
+    }
+
+    try {
+      const response = await userRequests.loginRequest(data);
+
+      if(response.success){
+        console.log("Success!", response);
+        AuthStore.update((s) => {
+          s.isLoggedIn = true;
+        });
+        router.replace("/home");
+      
+      }else{
+        console.log("Ivalid username or password!", response);
+      }
+      
+    } catch (error) {
+      console.error("Error during login:", error);
+    }
+  }
+
   return (
     <SafeAreaView  style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <Stack.Screen options={{ title: "Login" }} />
       <View>
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>Email/Username</Text>
         <TextInput
-          placeholder="email"
-          nativeID="email"
+          placeholder="Email/Username"
+          nativeID="inputRef"
           onChangeText={(text) => {
-            emailRef.current = text;
+            inputRef.current = text;
           }}
           style={styles.textInput}
         />
@@ -34,11 +64,7 @@ export default function LogIn() {
       </View>
       <TouchableOpacity
       onPress={() => {
-        //TODO... login user
-        AuthStore.update((s) => {
-          s.isLoggedIn = true;
-        });
-        router.replace("/home");
+        handleLogin();
       }}>
         <Text>Login</Text>
       </TouchableOpacity>
