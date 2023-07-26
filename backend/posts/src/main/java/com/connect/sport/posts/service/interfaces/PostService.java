@@ -1,7 +1,7 @@
 package com.connect.sport.posts.service.interfaces;
 
 import com.connect.sport.posts.model.Post;
-import com.connect.sport.posts.utils.request.PostRequest;
+import com.connect.sport.posts.payload.request.PostRequest;
 
 import java.util.List;
 

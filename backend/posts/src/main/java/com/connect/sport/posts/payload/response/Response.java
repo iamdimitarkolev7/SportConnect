@@ -1,4 +1,4 @@
-package com.connect.sport.posts.utils.response;
+package com.connect.sport.posts.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

@@ -1,17 +1,23 @@
 package com.connect.sport.posts.service.implementations;
 
+import com.connect.sport.posts.enums.EventType;
 import com.connect.sport.posts.enums.Status;
 import com.connect.sport.posts.exception.InvalidIdException;
 import com.connect.sport.posts.model.Post;
+import com.connect.sport.posts.payload.kafka.event.Event;
 import com.connect.sport.posts.repository.PostRepository;
 import com.connect.sport.posts.service.interfaces.PostService;
-import com.connect.sport.posts.utils.request.PostRequest;
+import com.connect.sport.posts.payload.request.PostRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -19,6 +25,9 @@ import java.util.Optional;
 @Transactional
 @Slf4j
 public class PostServiceImpl implements PostService {
+
+    @Autowired
+    private KafkaTemplate<String, Event> kafkaTemplate;
 
     private final PostRepository postRepository;
 
@@ -48,6 +57,12 @@ public class PostServiceImpl implements PostService {
                 .visibility(request.getVisibility())
                 .tags(request.getTags())
                 .build();
+
+        Map<String, Post> createdPost = new HashMap<>();
+        createdPost.put("created-post", post);
+
+        Event postCreateEvent = new Event(EventType.CREATE_POST_EVENT, createdPost);
+        kafkaTemplate.send("post-create-topic", postCreateEvent);
 
         return postRepository.save(post);
     }

@@ -1,4 +1,4 @@
-package com.connect.sport.posts.utils.request;
+package com.connect.sport.posts.payload.request;
 
 import com.connect.sport.posts.enums.SportType;
 import com.connect.sport.posts.enums.Status;

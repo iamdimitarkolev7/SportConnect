@@ -167,6 +167,24 @@ public class UserServiceImpl implements UserService {
         tokenRepository.save(currentToken);
     }
 
+    @Override
+    public void addPostId(String userId, String postId) {
+
+        Optional<User> o_user = userRepository.findById(userId);
+
+        if (o_user.isEmpty()) {
+            throw new UserNotFoundException("There is no user with such id!");
+        }
+
+        User user = o_user.get();
+
+    }
+
+    @Override
+    public void deletePostId(String userId, String postId) {
+
+    }
+
     private void validateUser(User user) {
 
         if (user.isEnabled()) {

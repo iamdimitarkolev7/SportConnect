@@ -29,6 +29,8 @@ public class User implements UserDetails {
     private String password;
     private String verificationCode;
 
+    private List<String> postIds;
+
     private boolean enabled;
 
     @Enumerated(EnumType.STRING)
@@ -57,5 +59,13 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.enabled;
+    }
+
+    public void addPostId(String postId) {
+        postIds.add(postId);
+    }
+
+    public void deletePostId(String postId) {
+        postIds.remove(postId);
     }
 }
