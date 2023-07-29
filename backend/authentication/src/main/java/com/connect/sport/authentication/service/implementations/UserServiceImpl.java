@@ -26,6 +26,7 @@ import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -177,7 +178,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = o_user.get();
-
+        user.addPostId(postId);
     }
 
     @Override
@@ -205,6 +206,7 @@ public class UserServiceImpl implements UserService {
                 .role(UserRole.USER)
                 .enabled(false)
                 .verificationCode(verificationToken)
+                .postIds(new ArrayList<>())
                 .password(bCryptPasswordEncoder.encode(request.getPassword()))
                 .build();
     }
@@ -271,5 +273,4 @@ public class UserServiceImpl implements UserService {
                 .active(true)
                 .build();
     }
-
 }

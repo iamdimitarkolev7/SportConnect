@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 import static java.util.Map.of;
@@ -48,7 +49,7 @@ public class PostController {
     }
 
     @PostMapping("/api/v1/post/create")
-    public ResponseEntity<Response> createPost(@RequestBody PostRequest request) {
+    public ResponseEntity<Response> createPost(@RequestBody PostRequest request) throws IOException {
 
         Post createdPost = postService.createPost(request);
 

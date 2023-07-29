@@ -4,8 +4,8 @@ import com.connect.sport.posts.enums.SportType;
 import com.connect.sport.posts.enums.Status;
 import com.connect.sport.posts.enums.Visibility;
 import lombok.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.List;
 @Builder
 public class Post {
 
-    @MongoId
+    @Id
     private String id;
 
     private String authorId;

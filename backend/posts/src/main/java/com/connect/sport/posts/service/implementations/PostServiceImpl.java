@@ -15,6 +15,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Optional;
 public class PostServiceImpl implements PostService {
 
     @Autowired
-    private KafkaTemplate<String, Event> kafkaTemplate;
+    private KafkaTemplate<String, byte[]> kafkaTemplate;
 
     private final PostRepository postRepository;
 
@@ -44,7 +45,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post createPost(PostRequest request) {
+    public Post createPost(PostRequest request) throws IOException {
 
         Post post = Post.builder()
                 .authorId(request.getAuthorId())
@@ -58,13 +59,15 @@ public class PostServiceImpl implements PostService {
                 .tags(request.getTags())
                 .build();
 
-        Map<String, Post> createdPost = new HashMap<>();
-        createdPost.put("created-post", post);
+        Post createdPost = postRepository.save(post);
+        Map<String, Post> data = new HashMap<>();
+        data.put("created-post", createdPost);
 
-        Event postCreateEvent = new Event(EventType.CREATE_POST_EVENT, createdPost);
-        kafkaTemplate.send("post-create-topic", postCreateEvent);
+        Event postCreateEvent = new Event(EventType.CREATE_POST_EVENT, data);
+        byte[] eventBytes = postCreateEvent.toJsonBytes();
+        kafkaTemplate.send("post-create-topic", eventBytes);
 
-        return postRepository.save(post);
+        return createdPost;
     }
 
     @Override
