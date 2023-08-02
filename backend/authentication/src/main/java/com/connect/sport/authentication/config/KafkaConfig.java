@@ -7,6 +7,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,16 +40,16 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, String> kafkaTemplate() {
+    public KafkaTemplate<String, byte[]> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
     @Bean
-    public ProducerFactory<String, String> producerFactory() {
+    public ProducerFactory<String, byte[]> producerFactory() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configs.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        configs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         return new DefaultKafkaProducerFactory<>(configs);
     }
 
@@ -80,4 +81,15 @@ public class KafkaConfig {
     public NewTopic postDeleteTopic() {
         return new NewTopic("post-delete-topic", 3, (short) 1);
     }
+
+    @Bean
+    public NewTopic authorizeTokenRequestTopic() {
+        return new NewTopic("authorize-token-request-topic", 3, (short) 1);
+    }
+
+    @Bean
+    public NewTopic authorizeTokenResponseTopic() {
+        return new NewTopic("authorize-token-response-topic", 3, (short) 1);
+    }
+
 }

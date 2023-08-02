@@ -1,25 +1,38 @@
 package com.connect.sport.authentication.event;
 
+import com.connect.sport.authentication.enums.EventType;
 import com.connect.sport.authentication.payload.kafka.event.Event;
+import com.connect.sport.authentication.service.interfaces.TokenService;
 import com.connect.sport.authentication.service.interfaces.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Component
 public class BaseEventHandler {
 
+    @Autowired
+    private final KafkaTemplate<String, byte[]> kafkaTemplate;
+
     private final ObjectMapper objectMapper;
     private final UserService userService;
+    private final TokenService tokenService;
 
-    @KafkaListener(topics = "post-create-topic", groupId = "mitko", containerFactory = "kafkaListenerContainerFactory")
+    @KafkaListener(topics = {"authorize-token-request-topic", "post-create-topic"}, groupId = "mitko", containerFactory = "kafkaListenerContainerFactory")
     private void eventListenerHandler(byte[] receivedBytes) throws IOException {
 
         Event receivedEvent = Event.fromJsonBytes(receivedBytes);
@@ -28,6 +41,7 @@ public class BaseEventHandler {
         switch (receivedEvent.getEventType()) {
             case CREATE_POST_EVENT -> handlePostCreateEvent(jsonString);
             case DELETE_POST_EVENT -> handlePostDeleteEvent(jsonString);
+            case AUTHORIZE_TOKEN_REQUEST_EVENT -> handleAuthorizeTokenRequestEvent(jsonString);
         }
     }
 
@@ -46,5 +60,16 @@ public class BaseEventHandler {
     private void handlePostDeleteEvent(String jsonString) {
 
         System.out.println(jsonString);
+    }
+
+    private void handleAuthorizeTokenRequestEvent(String jsonString) throws IOException {
+        JsonNode jsonNode = objectMapper.readTree(jsonString);
+        String bearerToken = jsonNode.get("token").asText();
+        Map<String, String> data = new HashMap<>();
+        data.put("token-response", "mainata ti, ne su authorized");
+
+        Event authTokenEvent = new Event(EventType.AUTHORIZE_TOKEN_RESPONSE_EVENT, data);
+        byte[] eventBytes = authTokenEvent.toJsonBytes();
+        kafkaTemplate.send("authorize-token-response-topic", eventBytes);
     }
 }

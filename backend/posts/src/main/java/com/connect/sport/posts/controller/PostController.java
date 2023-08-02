@@ -5,6 +5,7 @@ import com.connect.sport.posts.model.Post;
 import com.connect.sport.posts.service.interfaces.PostService;
 import com.connect.sport.posts.payload.request.PostRequest;
 import com.connect.sport.posts.payload.response.Response;
+import com.connect.sport.posts.service.interfaces.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +20,11 @@ import static java.util.Map.of;
 public class PostController {
 
     private final PostService postService;
+    private final TokenService tokenService;
 
     @GetMapping("/api/v1/post/get/{id}")
-    public ResponseEntity<Response> getPostById(@PathVariable("id") String id) {
+    public ResponseEntity<Response> getPostById(@RequestHeader("Authorization") String token,
+                                                @PathVariable("id") String id) {
 
         try {
 
@@ -49,8 +52,11 @@ public class PostController {
     }
 
     @PostMapping("/api/v1/post/create")
-    public ResponseEntity<Response> createPost(@RequestBody PostRequest request) throws IOException {
+    public ResponseEntity<Response> createPost(@RequestHeader("Authorization") String token,
+                                               @RequestBody PostRequest request) throws IOException {
 
+
+        tokenService.authorizeToken(token);
         Post createdPost = postService.createPost(request);
 
         return ResponseEntity.ok(
@@ -64,7 +70,8 @@ public class PostController {
     }
 
     @PostMapping("/api/v1/post/archive/{id}")
-    public ResponseEntity<Response> archivePost(@PathVariable("id") String id) {
+    public ResponseEntity<Response> archivePost(@RequestHeader("Authorization") String token,
+                                                @PathVariable("id") String id) {
 
         try {
 
@@ -92,7 +99,8 @@ public class PostController {
     }
 
     @PutMapping("/api/v1/post/edit/{id}")
-    public ResponseEntity<Response> editPost(@PathVariable("id") String id,
+    public ResponseEntity<Response> editPost(@RequestHeader("Authorization") String token,
+                                             @PathVariable("id") String id,
                                              @RequestBody PostRequest request) {
 
         try {
@@ -121,7 +129,8 @@ public class PostController {
     }
 
     @DeleteMapping("/api/v1/post/delete/{id}")
-    public ResponseEntity<Response> deletePost(@PathVariable("id") String id) {
+    public ResponseEntity<Response> deletePost(@RequestHeader("Authorization") String token,
+                                               @PathVariable("id") String id) {
 
         try {
             postService.deletePost(id);

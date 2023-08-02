@@ -28,7 +28,7 @@ import java.util.Optional;
 public class PostServiceImpl implements PostService {
 
     @Autowired
-    private KafkaTemplate<String, byte[]> kafkaTemplate;
+    private final KafkaTemplate<String, byte[]> kafkaTemplate;
 
     private final PostRepository postRepository;
 
