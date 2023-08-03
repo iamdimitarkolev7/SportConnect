@@ -1,6 +1,7 @@
 package com.connect.sport.authentication.service.implementations;
 
 import com.connect.sport.authentication.exception.jwt.InvalidTokenException;
+import com.connect.sport.authentication.exception.jwt.TokenExpiredException;
 import com.connect.sport.authentication.model.Token;
 import com.connect.sport.authentication.repository.TokenRepository;
 import com.connect.sport.authentication.service.interfaces.TokenService;
@@ -47,5 +48,21 @@ public class TokenServiceImpl implements TokenService {
         userActiveToken.setToken(jwtService.generateNewToken(username, userId));
 
         return tokenRepository.save(userActiveToken);
+    }
+
+    @Override
+    public boolean validateToken(String bearerToken) {
+
+        String jwt = extractToken(bearerToken);
+
+        if (jwtService.isTokenExpired(jwt)) {
+            throw new TokenExpiredException("The jwt token is expired!");
+        }
+
+        return true;
+    }
+
+    private String extractToken(String bearerToken) {
+        return bearerToken.substring(7);
     }
 }

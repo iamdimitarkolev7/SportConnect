@@ -1,12 +1,16 @@
 package com.connect.sport.posts.controller;
 
 import com.connect.sport.posts.exception.InvalidIdException;
+import com.connect.sport.posts.exception.TokenExpiredException;
 import com.connect.sport.posts.model.Post;
 import com.connect.sport.posts.service.interfaces.PostService;
 import com.connect.sport.posts.payload.request.PostRequest;
 import com.connect.sport.posts.payload.response.Response;
 import com.connect.sport.posts.service.interfaces.TokenService;
+import com.connect.sport.posts.utils.KafkaResponse;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +22,9 @@ import static java.util.Map.of;
 @RestController
 @RequiredArgsConstructor
 public class PostController {
+
+    @Autowired
+    private final KafkaResponse kafkaResponse;
 
     private final PostService postService;
     private final TokenService tokenService;
@@ -53,20 +60,32 @@ public class PostController {
 
     @PostMapping("/api/v1/post/create")
     public ResponseEntity<Response> createPost(@RequestHeader("Authorization") String token,
-                                               @RequestBody PostRequest request) throws IOException {
+                                               @RequestBody PostRequest request) {
 
 
-        tokenService.authorizeToken(token);
-        Post createdPost = postService.createPost(request);
+        try {
 
-        return ResponseEntity.ok(
-                Response.builder()
-                        .success(true)
-                        .timeStamp(LocalDateTime.now())
-                        .message("Post created successfully")
-                        .data(of("createdPost", createdPost))
-                        .build()
-        );
+            authorizeToken(token);
+            Post createdPost = postService.createPost(request);
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .success(true)
+                            .timeStamp(LocalDateTime.now())
+                            .message("Post created successfully")
+                            .data(of("createdPost", createdPost))
+                            .build()
+            );
+        }
+        catch (RuntimeException | IOException e) {
+            return ResponseEntity.badRequest().body(
+                    Response.builder()
+                            .success(false)
+                            .timeStamp(LocalDateTime.now())
+                            .message(e.getMessage())
+                            .build()
+            );
+        }
     }
 
     @PostMapping("/api/v1/post/archive/{id}")
@@ -152,6 +171,17 @@ public class PostController {
                             .message(e.getMessage())
                             .build()
             );
+        }
+    }
+
+
+    private void authorizeToken(String token) throws IOException {
+
+        tokenService.authorizeToken(token);
+        JsonNode jsonNode = kafkaResponse.getResponse();
+
+        if (jsonNode.has("error")) {
+            throw new TokenExpiredException(jsonNode.get("error").asText());
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.connect.sport.authentication.event;
 
 import com.connect.sport.authentication.enums.EventType;
+import com.connect.sport.authentication.exception.jwt.TokenExpiredException;
 import com.connect.sport.authentication.payload.kafka.event.Event;
 import com.connect.sport.authentication.service.interfaces.TokenService;
 import com.connect.sport.authentication.service.interfaces.UserService;
@@ -63,10 +64,18 @@ public class BaseEventHandler {
     }
 
     private void handleAuthorizeTokenRequestEvent(String jsonString) throws IOException {
+
         JsonNode jsonNode = objectMapper.readTree(jsonString);
         String bearerToken = jsonNode.get("token").asText();
         Map<String, String> data = new HashMap<>();
-        data.put("token-response", "mainata ti, ne su authorized");
+
+        try {
+            String isValid = String.valueOf(tokenService.validateToken(bearerToken));
+            data.put("token-authorized", isValid);
+        }
+        catch (TokenExpiredException e) {
+            data.put("error", e.getMessage());
+        }
 
         Event authTokenEvent = new Event(EventType.AUTHORIZE_TOKEN_RESPONSE_EVENT, data);
         byte[] eventBytes = authTokenEvent.toJsonBytes();
